@@ -3,7 +3,7 @@
 #include "iParam.h"
 #include "ff.h"
 
-class _Param
+class _Param : public iParam
 {
     public:
         _Param(int bank=0);

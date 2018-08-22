@@ -9,16 +9,16 @@ _Param::_Param(int bank)
     numBank = searchFileCnt(workPath.c_str(), "BANK*");
 
     intParam.resize(sizeof(typeIntParam) / sizeof(string));
-    floatParam.resize(sizeof(typeFloatParam) / sizeof(string);
+    floatParam.resize(sizeof(typeFloatParam) / sizeof(string));
     
     /** read static parameter */
-    if (readStaticParameter() && (size_t(getBankNum() == staticParam.configRGBIndex.size()))) {
+    if (readStaticParameter() && (size_t(getBankNum()) == staticParam.configRGBIndex.size())) {
         posBank = staticParam.posBank;
     } else {
         size_t rgbNum = sizeof(typeRGBParam) / sizeof(string);
         staticParam.configRGB.reserve(getBankNum() * rgbNum);
         staticParam.configRGBIndex.resize(getBankNum());
-        posBank = bankPos;
+        posBank = bank;
     }
 
     /** Init Color Martrix
