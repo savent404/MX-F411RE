@@ -4,6 +4,8 @@
 #include "ff_gen_drv.h"
 #include "sd_diskio.h"
 
+#include "param.h"
+
 extern "C" void SDIO_IO_Init();
 char sd_path[4];
 
@@ -32,6 +34,8 @@ int main(void)
         debug("MX-F411RE Init Error\r\n");
         return -1;
     }
+
+    _Param *param = new _Param(0);
 
     while (1)
         ;
