@@ -1,8 +1,7 @@
 #pragma once
 
 #include "iBlade.h"
-#include <vector>
-#include "mbed.h"
+#include "SPI_Enhance.h"
 
 class _Blade : public iBlade
 {
@@ -12,6 +11,7 @@ class _Blade : public iBlade
          * @{ */
         const static uint8_t logic_1 = 0x7E;
         const static uint8_t logic_0 = 0x70;
+        SPI_DMA spi_dma;
         Thread t;
         void thread_handle();
         uint8_t* neoPixelMap;
@@ -21,7 +21,8 @@ class _Blade : public iBlade
         static void readColor(uint8_t* ptr, RGB& rgb);
         /** @} */
     public:
-        _Blade(const iParam* p);
+        _Blade(const iParam* p,
+               PinName outputPin);
         virtual ~_Blade();
         virtual bool play(triggerID_t id, uint32_t audioDuration = 0);
         virtual bool abort(triggerID_t id = Unknow);

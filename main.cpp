@@ -27,7 +27,7 @@ int main(void)
     }
 
     _Param *param = new _Param(0);
-    _Blade *blade = new _Blade(param);
+    _Blade *blade = new _Blade(param, PC_9);
 
     if (param == NULL)
         fInit = false;

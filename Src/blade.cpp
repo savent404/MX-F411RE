@@ -2,10 +2,13 @@
 
 using namespace std;
 
-_Blade::_Blade(const iParam* p)
+_Blade::_Blade(const iParam* p,
+               PinName outputPin)
     : iBlade(p)
     , t(osPriorityNormal, 0x2000, NULL, "Blade")
+    , spi_dma(outputPin)
 {
+    spi_dma.frequency(int(6e6));
     neoPixelMap = (uint8_t*)malloc(sizeof(uint8_t)
                                    * getPixelNum()
                                    * 24);
@@ -87,4 +90,8 @@ void _Blade::update()
     {
         setColor(p, *pColor);
     }
+    spi_dma.write((const char*)p,
+                  getPixelNum() * 24,
+                  (char*)NULL,
+                  0);
 }
