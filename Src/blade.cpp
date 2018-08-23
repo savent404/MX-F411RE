@@ -2,22 +2,26 @@
 
 using namespace std;
 
-_Blade::_Blade(const iParam* p,
-               PinName outputPin)
+_Blade::_Blade(const iParam* p)
     : iBlade(p)
-    , t(osPriorityNormal, 0x2000, NULL, "Blade")
-    , spi_dma(outputPin)
+    , t(osPriorityNormal, 0x4000, NULL, "Blade")
+    , spi_dma(PA_7, NC, PA_5)
 {
-    spi_dma.frequency(int(6e6));
+    spi_dma.frequency(int(8e6));
+    spi_dma.format(8);
     neoPixelMap = (uint8_t*)malloc(sizeof(uint8_t)
                                    * getPixelNum()
-                                   * 24);
+                                   * 24
+                                   + resetLength);
+    for (int i = 0; i < resetLength; i++)
+        neoPixelMap[i] = 0;
+
     t.start(callback(this, &_Blade::thread_handle));
 }
 
 _Blade::~_Blade()
 {
-
+    free(neoPixelMap);
 }
 
 bool _Blade::play(triggerID_t id, uint32_t audioDuration)
@@ -32,9 +36,13 @@ bool _Blade::abort(triggerID_t id)
 
 void _Blade::thread_handle()
 {
-    Thread::wait(BLADE_INTERVAL);
-    if (isActive)
+    for (;;)
+    {
+        Thread::wait(BLADE_INTERVAL);
         iBlade::hanlde();
+        if (isActive)
+            update();
+    }
 }
 
 void _Blade::bit_set(uint8_t* begin, uint8_t data)
@@ -63,7 +71,7 @@ void _Blade::setColor(uint8_t* ptr, const RGB& rgb)
 {
     uint8_t* _p = ptr;
 
-    bit_set(_p, rgb.wG());
+    bit_set(_p, rgb.wG() * 2 / 3);
     _p += 8;
     bit_set(_p, rgb.wR());
     _p += 8;
@@ -84,14 +92,19 @@ void _Blade::readColor(uint8_t* ptr, RGB& rgb)
 
 void _Blade::update()
 {
-    uint8_t* p = neoPixelMap;
+    _update();
+}
+
+void _Blade::_update()
+{
+    uint8_t* p = neoPixelMap + resetLength;
     RGB* pColor = vector;
-    for (int i = 0; i < getPixelNum(); i++, p += 24, vector += 1)
+    for (int i = 0; i < getPixelNum(); i++, p += 24, pColor += 1)
     {
         setColor(p, *pColor);
     }
-    spi_dma.write((const char*)p,
-                  getPixelNum() * 24,
+    spi_dma.write((const char*)neoPixelMap,
+                  getPixelNum() * 24 + resetLength,
                   (char*)NULL,
                   0);
 }

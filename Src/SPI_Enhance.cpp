@@ -13,6 +13,8 @@ SPI_DMA::SPI_DMA(PinName mosi,
     , rx_cplt_sem(1)
     , txEnableDMA(false)
     , rxEnableDMA(false)
+    , _tx_callback(0)
+    , _rx_callback(0)
 {
     /**
      * for now only support tx dam function
@@ -73,14 +75,13 @@ int SPI_DMA::write(const char* tx_buffer,
                           rx_length);
     }
     else if (tx_length != 0 && txEnableDMA) {
-        HAL_StatusTypeDef res;
+        HAL_StatusTypeDef res = HAL_OK;
 
-        tx_cplt_sem.wait();
-        lock();
+        if (tx_cplt_sem.wait(100) <= 0)
+            return -1;
         res = HAL_SPI_Transmit_DMA(&_spi.spi.handle,
                                    (uint8_t*)tx_buffer,
                                    tx_length);
-        unlock();
         if (res != HAL_OK) {
             tr_debug("SPI Transmit_DMA error");
             return -1;
@@ -100,6 +101,7 @@ void SPI_DMA::tx_dma_irq_handle()
 
     HAL_DMA_IRQHandler(&tx_dma);
     if (tx_dma.State == HAL_DMA_STATE_READY) {
+        tx_cplt_sem.release();
         int error = tx_dma.ErrorCode;
         if (error != HAL_DMA_ERROR_NONE) {
             event = SPI_EVENT_ERROR |
@@ -111,7 +113,6 @@ void SPI_DMA::tx_dma_irq_handle()
         if (_tx_callback)
             _tx_callback.call(event);
     }
-    tx_cplt_sem.release();
 }
 
 void SPI_DMA::rx_dma_irq_handle()
@@ -131,8 +132,8 @@ void SPI_DMA::rx_dma_irq_handle()
         }
         if (_rx_callback)
             _rx_callback.call(event);
+        rx_cplt_sem.release();
     }
-    rx_cplt_sem.release();
 }
 
 void SPI_DMA::setTxCallback(const event_callback_t callback)

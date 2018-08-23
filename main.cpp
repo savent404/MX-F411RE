@@ -27,7 +27,7 @@ int main(void)
     }
 
     _Param *param = new _Param(0);
-    _Blade *blade = new _Blade(param, PC_9);
+    _Blade *blade = new _Blade(param);
 
     if (param == NULL)
         fInit = false;
@@ -44,7 +44,16 @@ int main(void)
         return -1;
     }
 
+    param->setParameter("NP_Cset", 5);
+    param->setParameter("NP_Amode", 1);
+    param->setParameter("NP_Density", 99.1f);
+    blade->play(Out);
+
     while (1)
-        ;
+    {
+        Thread::wait(2);
+        // blade->play(Swing);
+    }
+
     return 0;
 }

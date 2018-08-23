@@ -9,6 +9,7 @@ class _Blade : public iBlade
         /**
          * @name NeoPixel driver var
          * @{ */
+        const static int resetLength = 256;
         const static uint8_t logic_1 = 0x7E;
         const static uint8_t logic_0 = 0x70;
         SPI_DMA spi_dma;
@@ -21,10 +22,10 @@ class _Blade : public iBlade
         static void readColor(uint8_t* ptr, RGB& rgb);
         /** @} */
     public:
-        _Blade(const iParam* p,
-               PinName outputPin);
+        _Blade(const iParam* p);
         virtual ~_Blade();
         virtual bool play(triggerID_t id, uint32_t audioDuration = 0);
         virtual bool abort(triggerID_t id = Unknow);
         virtual void update();
+        void _update();
 };
