@@ -1,4 +1,8 @@
 # mbed feature:filesystem(conflict with FATFS)
-mbed-os/features/filesystem/*
-# tiny-regex's test main handle
-MXSchedule/tiny-regex-c/tests/*
+mbed-os/features/filesystem/fat/ChaN/*
+# FATFS-port
+Debug/*
+Release/*
+Develop/*Debug/*
+Release/*
+Develop/*

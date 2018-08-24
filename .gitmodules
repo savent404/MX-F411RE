@@ -1,6 +1,3 @@
-[submodule "FATFS-port"]
-	path = FATFS-port
-	url = git@github.com:savent404/FATFS-port.git
 [submodule "MXSchedule"]
 	path = MXSchedule
 	url = git@github.com:savent404/MXSchedule.git
