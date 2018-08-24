@@ -33,7 +33,10 @@ void mDebug(int level, const char* str, ...)
     int cnt;
 
     va_start(aptr, str);
-    cnt = sprintf(buffer, ":%d", level);
-    vsprintf(buffer + cnt, str, aptr);
+    cnt = sprintf(buffer, ":%d ", level);
+    cnt += vsprintf(buffer + cnt, str, aptr);
+    cnt += sprintf(buffer, "\r\n", buffer + cnt);
     va_end(aptr);
+
+    debug(buffer);
 }

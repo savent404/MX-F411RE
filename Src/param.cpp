@@ -1,16 +1,43 @@
 #include "param.h"
+#include "mbed.h"
+#include "FATFileSystem.h"
+#include "File.h"
+#include "Dir.h"
 
 using namespace std;
+
+extern FATFileSystem fatfsInstance;
+
+char* fgets_wrapper(char* buffer, int maxLen, File* fp)
+{
+    int remain = 0;
+    char c;
+    while (fp->size() != fp->tell())
+    {
+        fp->read(&c, 1);
+
+        if (c == '\r')
+            continue;
+        if (c == '\n' || c == '\0')
+            break;
+        buffer[remain++] = c;
+
+        if (remain + 1 >= maxLen)
+            break;
+    }
+    buffer[remain] = 0;
+    return buffer;
+}
 
 _Param::_Param(int bank)
     : iParam(bank)
 {
     workPath = "0:/";
-    numBank = searchFileCnt(workPath.c_str(), "BANK*");
+    numBank = searchFileCnt(workPath.c_str(), "[Bb][Aa][Nn][Kk]+");
 
     intParam.resize(sizeof(typeIntParam) / sizeof(string));
     floatParam.resize(sizeof(typeFloatParam) / sizeof(string));
-    
+
     /** read static parameter */
     if (readStaticParameter() && (size_t(getBankNum()) == staticParam.configRGBIndex.size())) {
         posBank = staticParam.posBank;
@@ -39,89 +66,90 @@ _Param::~_Param()
 
 int _Param::searchFileCnt(const char* path, const char* regex) const
 {
-    FATFS_DIR dj;
-    FRESULT fr;
-    FILINFO fno;
-
+    Dir directory;
     int cnt = 0;
+    dirent ent;
 
-    fr = f_findfirst(&dj, &fno, path, regex);
+    if (directory.open(&fatfsInstance, path) != 0)
+        return 0;
 
-    while (fr == FR_OK && fno.fname[0]) {
-        cnt += 1;
-        fr = f_findnext(&dj, &fno);
+    while (directory.read(&ent)) {
+        if (!re_match(regex, ent.d_name)) {
+            cnt++;
+        }
     }
+    directory.close();
     return cnt;
 }
 
-bool _Param::searchFileName(const char* path, const char* regex,std::string& out, int pos) const
+bool _Param::searchFileName(const char* path, const char* regex, std::string& out, int pos) const
 {
-    FATFS_DIR dj;
-    FRESULT fr;
-    FILINFO fno;
+    Dir directory;
+    int cnt = 0;
+    dirent ent;
 
-    fr = f_findfirst(&dj, &fno, path, regex);
+    if (directory.open(&fatfsInstance, path) != 0)
+        return false;
 
-    while (fr == FR_OK && fno.fname[0]) {
-        if (pos-- <= 0) {
-            out = fno.fname;
+    while (directory.read(&ent)) {
+        if (!re_match(regex, ent.d_name)
+            && cnt++ == pos) {
+            out = ent.d_name;
+            directory.close();
             return true;
         }
-        fr = f_findnext(&dj, &fno);
     }
+    directory.close();
     return false;
 }
 
 bool _Param::readConfigFromFile(const char* filepath)
 {
-    FRESULT fr;
-    FIL file;
-    char *pBuffer = NULL;
+    char* pBuffer = NULL;
     const int defaultBufferSize = 512;
+    File file;
 
-    fr = f_open(&file, filepath, FA_READ);
-    pBuffer = (char*)malloc(sizeof(char)*defaultBufferSize);
-
-    if (fr != FR_OK)
+    if (file.open(&fatfsInstance, filepath))
         return false;
+
+    pBuffer = (char*)malloc(sizeof(char) * defaultBufferSize);
+
     if (pBuffer == NULL)
         return false;
 
-    while (!f_eof(&file)) {
-        if (f_gets((TCHAR*)pBuffer, defaultBufferSize, &file) == NULL)
-            break;
+    while (file.size() != file.tell()) {
+        fgets_wrapper(pBuffer, defaultBufferSize, &file);
         setParameterFromLine(pBuffer);
     }
 
     free(pBuffer);
-    f_close(&file);
+    file.close();
+
     return true;
 }
 
 bool _Param::readColorConfigFromFile(const char* filepath)
 {
-
-    FRESULT fr;
-    FIL file;
-    char *pBuffer = NULL;
+    char* pBuffer = NULL;
     const int defaultBufferSize = 512;
+    File file;
 
-    fr = f_open(&file, filepath, FA_READ);
-    pBuffer = (char*)malloc(sizeof(char)*defaultBufferSize);
-
-    if (fr != FR_OK)
+    if (file.open(&fatfsInstance, filepath))
         return false;
+
+    pBuffer = (char*)malloc(sizeof(char) * defaultBufferSize);
+
     if (pBuffer == NULL)
         return false;
 
-    while (!f_eof(&file)) {
-        if (f_gets((TCHAR*)pBuffer, defaultBufferSize, &file) == NULL)
-            break;
+    while (file.size() != file.tell()) {
+        fgets_wrapper(pBuffer, defaultBufferSize, &file);
         setColorParameterFromLine(pBuffer);
     }
 
     free(pBuffer);
-    f_close(&file);
+    file.close();
+
     return true;
 }
 
@@ -134,4 +162,3 @@ bool _Param::writeStaticParameter()
 {
     return true;
 }
-

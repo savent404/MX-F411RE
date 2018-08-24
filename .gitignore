@@ -34,3 +34,26 @@
 
 # Build output dir
 BUILD/
+
+# Qt Project
+*.config
+*.creator
+*.creator.user
+*.files
+*.includes
+
+# eclipse Project
+*.targets
+
+# template files
+mbed_config.h
+
+# gtags & ctags
+GPATH
+GRTAGS
+CTAGS
+
+# vscode Project
+.vscode
+
+mbed-os/*
